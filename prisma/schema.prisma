@@ -1,0 +1,128 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  DRIVER
+  ADMIN
+}
+
+enum BookingStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CANCELLED
+  COMPLETED
+}
+
+// User model synced with Clerk
+model User {
+  id                String    @id @default(uuid()) // Internal UUID
+  clerkId           String    @unique // Clerk user ID
+  email             String    @unique
+  firstName         String?
+  lastName          String?
+  username          String?   @unique
+  profileImageUrl   String?
+  role              UserRole? // Role selected by user
+  city              String?   // User's city for filtering drivers
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  // Relations
+  driverProfile     Driver?
+  bookingsAsUser    Booking[]  @relation("UserBookings")
+
+  @@map("users")
+  @@index([clerkId])
+}
+
+// Driver profile with detailed information
+model Driver {
+  id                String   @id @default(uuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Personal Information
+  name              String
+  phoneNumber       String
+  
+  // Vehicle Registration
+  rcNumber          String   @unique
+  rcImage           String?  // URL to RC image
+  
+  // Driving License
+  dlNumber          String   @unique
+  dlImage           String?  // URL to DL image
+  
+  // Address Information
+  permanentAddress  String
+  operatingAddress  String
+  city              String   // Operating city
+  state             String?
+  pincode           String?
+  
+  // Additional Information
+  vehicleType       String?  // e.g., Car, Bike, Auto
+  vehicleModel      String?
+  vehicleNumber     String?  @unique
+  experience        Int?     // Years of experience
+  salaryExpectation Int?     // Expected salary per month in INR
+  availability      Boolean  @default(true)
+  
+  // Verification Status
+  isVerified        Boolean  @default(false)
+  verifiedAt        DateTime?
+  verifiedBy        String?  // Admin ID who verified
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  bookings          Booking[]  @relation("DriverBookings")
+
+  @@map("drivers")
+  @@index([city])
+  @@index([userId])
+}
+
+// Booking/Request model
+model Booking {
+  id                String        @id @default(uuid())
+  
+  // User who made the booking
+  userId            String
+  user              User          @relation("UserBookings", fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Driver who received the booking
+  driverId          String
+  driver            Driver        @relation("DriverBookings", fields: [driverId], references: [id], onDelete: Cascade)
+  
+  // Booking details
+  status            BookingStatus @default(PENDING)
+  pickupLocation    String?       // Optional: where to pick up
+  dropLocation      String?       // Optional: destination
+  scheduledDate     DateTime?     // Optional: when they need the driver
+  notes             String?       // Additional notes from user
+  
+  // Response from driver
+  driverResponse    String?       // Optional message from driver
+  respondedAt       DateTime?     // When driver responded
+  
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@map("bookings")
+  @@index([userId])
+  @@index([driverId])
+  @@index([status])
+}
