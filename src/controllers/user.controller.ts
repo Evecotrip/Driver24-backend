@@ -1,12 +1,6 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
-
-// Extend Express Request to include userId from auth middleware
-export interface AuthRequest extends Request {
-  userId?: string;
-}
+import { AuthRequest } from '../middleware/clerk';
+import { prisma } from '../lib/prisma';
 
 /**
  * Get all users

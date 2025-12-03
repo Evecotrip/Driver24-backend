@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.updateAvailability = exports.bulkVerifyDrivers = exports.getVerifiedDrivers = exports.getPendingDrivers = exports.verifyDriver = exports.getAllDrivers = exports.getDriversByCity = exports.getMyDriverProfile = exports.createOrUpdateDriverProfile = void 0;
 const client_1 = require("@prisma/client");
 const upload_service_1 = require("../services/upload.service");
-const prisma = new client_1.PrismaClient();
+const prisma_1 = require("../lib/prisma");
 /**
  * Create or update driver profile
  * Only users with DRIVER role can create/update their profile
@@ -30,7 +30,7 @@ const createOrUpdateDriverProfile = async (req, res) => {
             return;
         }
         // Check if driver profile already exists
-        const existingDriver = await prisma.driver.findUnique({
+        const existingDriver = await prisma_1.prisma.driver.findUnique({
             where: { userId }
         });
         // Upload new images if provided
@@ -50,7 +50,7 @@ const createOrUpdateDriverProfile = async (req, res) => {
         let driver;
         if (existingDriver) {
             // Update existing profile
-            driver = await prisma.driver.update({
+            driver = await prisma_1.prisma.driver.update({
                 where: { userId },
                 data: {
                     name,
@@ -77,7 +77,7 @@ const createOrUpdateDriverProfile = async (req, res) => {
         }
         else {
             // Create new profile
-            driver = await prisma.driver.create({
+            driver = await prisma_1.prisma.driver.create({
                 data: {
                     userId,
                     name,
@@ -132,7 +132,7 @@ const getMyDriverProfile = async (req, res) => {
             res.status(401).json({ success: false, error: 'Unauthorized' });
             return;
         }
-        const driver = await prisma.driver.findUnique({
+        const driver = await prisma_1.prisma.driver.findUnique({
             where: { userId },
             include: {
                 user: {
@@ -211,9 +211,9 @@ const getDriversByCity = async (req, res) => {
             }
         }
         // Get total count for pagination
-        const totalCount = await prisma.driver.count({ where: whereClause });
+        const totalCount = await prisma_1.prisma.driver.count({ where: whereClause });
         // Get paginated drivers
-        const drivers = await prisma.driver.findMany({
+        const drivers = await prisma_1.prisma.driver.findMany({
             where: whereClause,
             include: {
                 user: {
@@ -265,7 +265,7 @@ const getAllDrivers = async (req, res) => {
             return;
         }
         const { verified, city } = req.query;
-        const drivers = await prisma.driver.findMany({
+        const drivers = await prisma_1.prisma.driver.findMany({
             where: {
                 ...(verified !== undefined && { isVerified: verified === 'true' }),
                 ...(city && { city: { equals: city, mode: 'insensitive' } })
@@ -307,7 +307,7 @@ const verifyDriver = async (req, res) => {
             });
             return;
         }
-        const driver = await prisma.driver.update({
+        const driver = await prisma_1.prisma.driver.update({
             where: { id: driverId },
             data: {
                 isVerified: true,
@@ -340,7 +340,7 @@ const getPendingDrivers = async (req, res) => {
             });
             return;
         }
-        const drivers = await prisma.driver.findMany({
+        const drivers = await prisma_1.prisma.driver.findMany({
             where: {
                 isVerified: false
             },
@@ -379,7 +379,7 @@ const getVerifiedDrivers = async (req, res) => {
             });
             return;
         }
-        const drivers = await prisma.driver.findMany({
+        const drivers = await prisma_1.prisma.driver.findMany({
             where: {
                 isVerified: true
             },
@@ -427,7 +427,7 @@ const bulkVerifyDrivers = async (req, res) => {
             });
             return;
         }
-        const result = await prisma.driver.updateMany({
+        const result = await prisma_1.prisma.driver.updateMany({
             where: {
                 id: {
                     in: driverIds
@@ -473,7 +473,7 @@ const updateAvailability = async (req, res) => {
             });
             return;
         }
-        const driver = await prisma.driver.update({
+        const driver = await prisma_1.prisma.driver.update({
             where: { userId },
             data: { availability }
         });

@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getDriverFullInfo = exports.cancelBooking = exports.updateBookingStatus = exports.getDriverBookings = exports.getUserBookings = exports.createBooking = void 0;
 const client_1 = require("@prisma/client");
-const prisma = new client_1.PrismaClient();
+const prisma_1 = require("../lib/prisma");
 /**
  * Create a booking request (USER only)
  */
@@ -27,7 +27,7 @@ const createBooking = async (req, res) => {
             return;
         }
         // Check if driver exists and is verified
-        const driver = await prisma.driver.findUnique({
+        const driver = await prisma_1.prisma.driver.findUnique({
             where: { id: driverId }
         });
         if (!driver) {
@@ -45,7 +45,7 @@ const createBooking = async (req, res) => {
             return;
         }
         // Check if user already has a pending booking with this driver
-        const existingBooking = await prisma.booking.findFirst({
+        const existingBooking = await prisma_1.prisma.booking.findFirst({
             where: {
                 userId: userId,
                 driverId,
@@ -60,7 +60,7 @@ const createBooking = async (req, res) => {
             return;
         }
         // Create booking
-        const booking = await prisma.booking.create({
+        const booking = await prisma_1.prisma.booking.create({
             data: {
                 userId: userId,
                 driverId,
@@ -110,7 +110,7 @@ const getUserBookings = async (req, res) => {
             });
             return;
         }
-        const bookings = await prisma.booking.findMany({
+        const bookings = await prisma_1.prisma.booking.findMany({
             where: { userId: userId },
             include: {
                 driver: {
@@ -150,7 +150,7 @@ const getDriverBookings = async (req, res) => {
             return;
         }
         // Get driver profile
-        const driver = await prisma.driver.findUnique({
+        const driver = await prisma_1.prisma.driver.findUnique({
             where: { userId: userId }
         });
         if (!driver) {
@@ -160,7 +160,7 @@ const getDriverBookings = async (req, res) => {
             });
             return;
         }
-        const bookings = await prisma.booking.findMany({
+        const bookings = await prisma_1.prisma.booking.findMany({
             where: { driverId: driver.id },
             include: {
                 user: {
@@ -208,7 +208,7 @@ const updateBookingStatus = async (req, res) => {
             return;
         }
         // Get driver profile
-        const driver = await prisma.driver.findUnique({
+        const driver = await prisma_1.prisma.driver.findUnique({
             where: { userId: userId }
         });
         if (!driver) {
@@ -219,7 +219,7 @@ const updateBookingStatus = async (req, res) => {
             return;
         }
         // Check if booking exists and belongs to this driver
-        const booking = await prisma.booking.findUnique({
+        const booking = await prisma_1.prisma.booking.findUnique({
             where: { id: bookingId }
         });
         if (!booking) {
@@ -244,7 +244,7 @@ const updateBookingStatus = async (req, res) => {
             return;
         }
         // Update booking
-        const updatedBooking = await prisma.booking.update({
+        const updatedBooking = await prisma_1.prisma.booking.update({
             where: { id: bookingId },
             data: {
                 status,
@@ -289,7 +289,7 @@ const cancelBooking = async (req, res) => {
             return;
         }
         // Check if booking exists and belongs to this user
-        const booking = await prisma.booking.findUnique({
+        const booking = await prisma_1.prisma.booking.findUnique({
             where: { id: bookingId }
         });
         if (!booking) {
@@ -314,7 +314,7 @@ const cancelBooking = async (req, res) => {
             return;
         }
         // Update booking status to cancelled
-        const updatedBooking = await prisma.booking.update({
+        const updatedBooking = await prisma_1.prisma.booking.update({
             where: { id: bookingId },
             data: { status: client_1.BookingStatus.CANCELLED }
         });
@@ -346,7 +346,7 @@ const getDriverFullInfo = async (req, res) => {
             return;
         }
         // Check if user has an accepted booking with this driver
-        const acceptedBooking = await prisma.booking.findFirst({
+        const acceptedBooking = await prisma_1.prisma.booking.findFirst({
             where: {
                 userId: userId,
                 driverId,
@@ -361,7 +361,7 @@ const getDriverFullInfo = async (req, res) => {
             return;
         }
         // Get full driver info including phone number
-        const driver = await prisma.driver.findUnique({
+        const driver = await prisma_1.prisma.driver.findUnique({
             where: { id: driverId },
             include: {
                 user: {

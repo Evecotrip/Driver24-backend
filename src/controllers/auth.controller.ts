@@ -1,9 +1,8 @@
 import { Request, Response } from 'express';
-import { PrismaClient, UserRole } from '@prisma/client';
+import { UserRole } from '@prisma/client';
 import { AuthRequest } from '../middleware/clerk';
+import { prisma } from '../lib/prisma';
 import { generateToken } from '../services/jwt.service';
-
-const prisma = new PrismaClient();
 
 /**
  * Select role and generate custom JWT token

@@ -1,8 +1,7 @@
 import { Request, Response } from 'express';
-import { PrismaClient, BookingStatus, UserRole } from '@prisma/client';
+import { BookingStatus, UserRole } from '@prisma/client';
 import { AuthRequest } from '../middleware/jwt';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma';
 
 /**
  * Create a booking request (USER only)
@@ -15,17 +14,17 @@ export const createBooking = async (req: AuthRequest, res: Response): Promise<vo
 
     // Only users can create bookings
     if (userRole !== UserRole.USER) {
-      res.status(403).json({ 
-        success: false, 
-        error: 'Only users can create booking requests' 
+      res.status(403).json({
+        success: false,
+        error: 'Only users can create booking requests'
       });
       return;
     }
 
     if (!driverId) {
-      res.status(400).json({ 
-        success: false, 
-        error: 'Driver ID is required' 
+      res.status(400).json({
+        success: false,
+        error: 'Driver ID is required'
       });
       return;
     }
@@ -36,17 +35,17 @@ export const createBooking = async (req: AuthRequest, res: Response): Promise<vo
     });
 
     if (!driver) {
-      res.status(404).json({ 
-        success: false, 
-        error: 'Driver not found' 
+      res.status(404).json({
+        success: false,
+        error: 'Driver not found'
       });
       return;
     }
 
     if (!driver.isVerified) {
-      res.status(400).json({ 
-        success: false, 
-        error: 'Driver is not verified yet' 
+      res.status(400).json({
+        success: false,
+        error: 'Driver is not verified yet'
       });
       return;
     }
@@ -61,9 +60,9 @@ export const createBooking = async (req: AuthRequest, res: Response): Promise<vo
     });
 
     if (existingBooking) {
-      res.status(400).json({ 
-        success: false, 
-        error: 'You already have a pending request with this driver' 
+      res.status(400).json({
+        success: false,
+        error: 'You already have a pending request with this driver'
       });
       return;
     }
@@ -94,10 +93,10 @@ export const createBooking = async (req: AuthRequest, res: Response): Promise<vo
       }
     });
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       data: booking,
-      message: 'Booking request sent successfully' 
+      message: 'Booking request sent successfully'
     });
   } catch (error) {
     console.error('Error creating booking:', error);
@@ -114,9 +113,9 @@ export const getUserBookings = async (req: AuthRequest, res: Response): Promise<
     const userRole = req.userRole;
 
     if (userRole !== UserRole.USER) {
-      res.status(403).json({ 
-        success: false, 
-        error: 'Access denied' 
+      res.status(403).json({
+        success: false,
+        error: 'Access denied'
       });
       return;
     }
@@ -155,9 +154,9 @@ export const getDriverBookings = async (req: AuthRequest, res: Response): Promis
     const userRole = req.userRole;
 
     if (userRole !== UserRole.DRIVER) {
-      res.status(403).json({ 
-        success: false, 
-        error: 'Only drivers can access this endpoint' 
+      res.status(403).json({
+        success: false,
+        error: 'Only drivers can access this endpoint'
       });
       return;
     }
@@ -168,9 +167,9 @@ export const getDriverBookings = async (req: AuthRequest, res: Response): Promis
     });
 
     if (!driver) {
-      res.status(404).json({ 
-        success: false, 
-        error: 'Driver profile not found' 
+      res.status(404).json({
+        success: false,
+        error: 'Driver profile not found'
       });
       return;
     }
@@ -210,17 +209,17 @@ export const updateBookingStatus = async (req: AuthRequest, res: Response): Prom
     const { status, driverResponse } = req.body;
 
     if (userRole !== UserRole.DRIVER) {
-      res.status(403).json({ 
-        success: false, 
-        error: 'Only drivers can update booking status' 
+      res.status(403).json({
+        success: false,
+        error: 'Only drivers can update booking status'
       });
       return;
     }
 
     if (!status || ![BookingStatus.ACCEPTED, BookingStatus.REJECTED].includes(status)) {
-      res.status(400).json({ 
-        success: false, 
-        error: 'Valid status (ACCEPTED or REJECTED) is required' 
+      res.status(400).json({
+        success: false,
+        error: 'Valid status (ACCEPTED or REJECTED) is required'
       });
       return;
     }
@@ -231,9 +230,9 @@ export const updateBookingStatus = async (req: AuthRequest, res: Response): Prom
     });
 
     if (!driver) {
-      res.status(404).json({ 
-        success: false, 
-        error: 'Driver profile not found' 
+      res.status(404).json({
+        success: false,
+        error: 'Driver profile not found'
       });
       return;
     }
@@ -244,25 +243,25 @@ export const updateBookingStatus = async (req: AuthRequest, res: Response): Prom
     });
 
     if (!booking) {
-      res.status(404).json({ 
-        success: false, 
-        error: 'Booking not found' 
+      res.status(404).json({
+        success: false,
+        error: 'Booking not found'
       });
       return;
     }
 
     if (booking.driverId !== driver.id) {
-      res.status(403).json({ 
-        success: false, 
-        error: 'This booking does not belong to you' 
+      res.status(403).json({
+        success: false,
+        error: 'This booking does not belong to you'
       });
       return;
     }
 
     if (booking.status !== BookingStatus.PENDING) {
-      res.status(400).json({ 
-        success: false, 
-        error: 'This booking has already been responded to' 
+      res.status(400).json({
+        success: false,
+        error: 'This booking has already been responded to'
       });
       return;
     }
@@ -286,10 +285,10 @@ export const updateBookingStatus = async (req: AuthRequest, res: Response): Prom
       }
     });
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       data: updatedBooking,
-      message: `Booking ${status.toLowerCase()} successfully` 
+      message: `Booking ${status.toLowerCase()} successfully`
     });
   } catch (error) {
     console.error('Error updating booking status:', error);
@@ -307,9 +306,9 @@ export const cancelBooking = async (req: AuthRequest, res: Response): Promise<vo
     const { bookingId } = req.params;
 
     if (userRole !== UserRole.USER) {
-      res.status(403).json({ 
-        success: false, 
-        error: 'Only users can cancel bookings' 
+      res.status(403).json({
+        success: false,
+        error: 'Only users can cancel bookings'
       });
       return;
     }
@@ -320,25 +319,25 @@ export const cancelBooking = async (req: AuthRequest, res: Response): Promise<vo
     });
 
     if (!booking) {
-      res.status(404).json({ 
-        success: false, 
-        error: 'Booking not found' 
+      res.status(404).json({
+        success: false,
+        error: 'Booking not found'
       });
       return;
     }
 
     if (booking.userId !== userId) {
-      res.status(403).json({ 
-        success: false, 
-        error: 'This booking does not belong to you' 
+      res.status(403).json({
+        success: false,
+        error: 'This booking does not belong to you'
       });
       return;
     }
 
     if (booking.status !== BookingStatus.PENDING) {
-      res.status(400).json({ 
-        success: false, 
-        error: 'Only pending bookings can be cancelled' 
+      res.status(400).json({
+        success: false,
+        error: 'Only pending bookings can be cancelled'
       });
       return;
     }
@@ -349,10 +348,10 @@ export const cancelBooking = async (req: AuthRequest, res: Response): Promise<vo
       data: { status: BookingStatus.CANCELLED }
     });
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       data: updatedBooking,
-      message: 'Booking cancelled successfully' 
+      message: 'Booking cancelled successfully'
     });
   } catch (error) {
     console.error('Error cancelling booking:', error);
@@ -370,9 +369,9 @@ export const getDriverFullInfo = async (req: AuthRequest, res: Response): Promis
     const { driverId } = req.params;
 
     if (userRole !== UserRole.USER) {
-      res.status(403).json({ 
-        success: false, 
-        error: 'Access denied' 
+      res.status(403).json({
+        success: false,
+        error: 'Access denied'
       });
       return;
     }
@@ -387,9 +386,9 @@ export const getDriverFullInfo = async (req: AuthRequest, res: Response): Promis
     });
 
     if (!acceptedBooking) {
-      res.status(403).json({ 
-        success: false, 
-        error: 'You can only view full details of drivers who have accepted your booking request' 
+      res.status(403).json({
+        success: false,
+        error: 'You can only view full details of drivers who have accepted your booking request'
       });
       return;
     }
@@ -410,9 +409,9 @@ export const getDriverFullInfo = async (req: AuthRequest, res: Response): Promis
     });
 
     if (!driver) {
-      res.status(404).json({ 
-        success: false, 
-        error: 'Driver not found' 
+      res.status(404).json({
+        success: false,
+        error: 'Driver not found'
       });
       return;
     }

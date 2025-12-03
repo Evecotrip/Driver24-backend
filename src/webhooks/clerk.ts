@@ -1,8 +1,7 @@
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { Webhook } from 'svix';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { WebhookEvent } from '@clerk/express';
+import { prisma } from '../lib/prisma';
 
 interface ClerkEmailAddress {
   id: string;
@@ -28,7 +27,7 @@ interface ClerkDeletedData {
  */
 export function verifyWebhook(req: Request): unknown {
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
-  
+
   if (!WEBHOOK_SECRET) {
     throw new Error('CLERK_WEBHOOK_SECRET is not set');
   }
@@ -42,7 +41,7 @@ export function verifyWebhook(req: Request): unknown {
   }
 
   const wh = new Webhook(WEBHOOK_SECRET);
-  
+
   try {
     return wh.verify(JSON.stringify(req.body), {
       'svix-id': svix_id,
@@ -59,9 +58,9 @@ export function verifyWebhook(req: Request): unknown {
  */
 export async function handleUserCreated(data: ClerkUserData) {
   const { id, email_addresses, first_name, last_name, username, image_url } = data;
-  
+
   const primaryEmail = email_addresses.find(email => email.id === data.primary_email_address_id);
-  
+
   if (!primaryEmail) {
     throw new Error('No primary email found');
   }
@@ -91,9 +90,9 @@ export async function handleUserCreated(data: ClerkUserData) {
  */
 export async function handleUserUpdated(data: ClerkUserData) {
   const { id, email_addresses, first_name, last_name, username, image_url } = data;
-  
+
   const primaryEmail = email_addresses.find(email => email.id === data.primary_email_address_id);
-  
+
   if (!primaryEmail) {
     throw new Error('No primary email found');
   }

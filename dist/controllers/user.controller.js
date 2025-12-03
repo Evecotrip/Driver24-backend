@@ -1,14 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getUserById = exports.getCurrentUser = exports.getAllUsers = void 0;
-const client_1 = require("@prisma/client");
-const prisma = new client_1.PrismaClient();
+const prisma_1 = require("../lib/prisma");
 /**
  * Get all users
  */
 const getAllUsers = async (req, res) => {
     try {
-        const users = await prisma.user.findMany();
+        const users = await prisma_1.prisma.user.findMany();
         res.json({ success: true, data: users });
     }
     catch (error) {
@@ -26,7 +25,7 @@ const getCurrentUser = async (req, res) => {
             res.status(401).json({ success: false, error: 'Unauthorized' });
             return;
         }
-        const user = await prisma.user.findUnique({
+        const user = await prisma_1.prisma.user.findUnique({
             where: { clerkId: req.userId }
         });
         if (!user) {
@@ -47,7 +46,7 @@ exports.getCurrentUser = getCurrentUser;
 const getUserById = async (req, res) => {
     try {
         const { id } = req.params;
-        const user = await prisma.user.findUnique({
+        const user = await prisma_1.prisma.user.findUnique({
             where: { id }
         });
         if (!user) {

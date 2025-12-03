@@ -2,8 +2,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.completeDriverRegistration = exports.refreshToken = exports.getProfile = exports.getProfileByClerkId = exports.selectRole = void 0;
 const client_1 = require("@prisma/client");
+const prisma_1 = require("../lib/prisma");
 const jwt_service_1 = require("../services/jwt.service");
-const prisma = new client_1.PrismaClient();
 /**
  * Select role and generate custom JWT token
  * Accepts clerkId in request body
@@ -40,7 +40,7 @@ const selectRole = async (req, res) => {
             return;
         }
         // Get user from database by clerkId
-        const user = await prisma.user.findUnique({
+        const user = await prisma_1.prisma.user.findUnique({
             where: { clerkId }
         });
         if (!user) {
@@ -48,7 +48,7 @@ const selectRole = async (req, res) => {
             return;
         }
         // Update user role and city
-        const updatedUser = await prisma.user.update({
+        const updatedUser = await prisma_1.prisma.user.update({
             where: { clerkId },
             data: {
                 role,
@@ -93,7 +93,7 @@ const getProfileByClerkId = async (req, res) => {
             res.status(400).json({ success: false, error: 'clerkId is required' });
             return;
         }
-        const user = await prisma.user.findUnique({
+        const user = await prisma_1.prisma.user.findUnique({
             where: { clerkId },
             select: {
                 id: true,
@@ -145,7 +145,7 @@ const getProfile = async (req, res) => {
             res.status(401).json({ success: false, error: 'Unauthorized' });
             return;
         }
-        const user = await prisma.user.findUnique({
+        const user = await prisma_1.prisma.user.findUnique({
             where: { clerkId: userId },
             include: {
                 driverProfile: true
@@ -173,7 +173,7 @@ const refreshToken = async (req, res) => {
             res.status(401).json({ success: false, error: 'Unauthorized' });
             return;
         }
-        const user = await prisma.user.findUnique({
+        const user = await prisma_1.prisma.user.findUnique({
             where: { clerkId: userId }
         });
         if (!user || !user.role) {
@@ -215,7 +215,7 @@ const completeDriverRegistration = async (req, res) => {
             return;
         }
         // Get user from database
-        const user = await prisma.user.findUnique({
+        const user = await prisma_1.prisma.user.findUnique({
             where: { clerkId: userId }
         });
         if (!user) {
@@ -231,7 +231,7 @@ const completeDriverRegistration = async (req, res) => {
             return;
         }
         // Find pending driver registration
-        const pendingDriver = await prisma.pendingDriver.findUnique({
+        const pendingDriver = await prisma_1.prisma.pendingDriver.findUnique({
             where: { email }
         });
         if (!pendingDriver) {
@@ -257,7 +257,7 @@ const completeDriverRegistration = async (req, res) => {
             return;
         }
         // Update user with DRIVER role and city
-        const updatedUser = await prisma.user.update({
+        const updatedUser = await prisma_1.prisma.user.update({
             where: { clerkId: userId },
             data: {
                 role: client_1.UserRole.DRIVER,
@@ -265,7 +265,7 @@ const completeDriverRegistration = async (req, res) => {
             }
         });
         // Create driver profile from pending data
-        const driver = await prisma.driver.create({
+        const driver = await prisma_1.prisma.driver.create({
             data: {
                 userId: updatedUser.id,
                 name: pendingDriver.name,
@@ -290,7 +290,7 @@ const completeDriverRegistration = async (req, res) => {
             }
         });
         // Mark pending driver as converted
-        await prisma.pendingDriver.update({
+        await prisma_1.prisma.pendingDriver.update({
             where: { id: pendingDriver.id },
             data: {
                 isConverted: true,

@@ -1,7 +1,6 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { PrismaClient } from '@prisma/client';
 import { clerkMiddleware } from '@clerk/express';
 import userRoutes from './routes/user.routes';
 import webhookRoutes from './routes/webhook.routes';
@@ -10,12 +9,10 @@ import driverRoutes from './routes/driver.routes';
 import bookingRoutes from './routes/booking.routes';
 import adminRoutes from './routes/admin.routes';
 import uploadRoutes from './routes/upload.routes';
+import { prisma } from './lib/prisma';
 
 // Load environment variables
 dotenv.config();
-
-// Initialize Prisma Client
-const prisma = new PrismaClient();
 
 // Initialize Express app
 const app = express();

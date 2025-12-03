@@ -1,8 +1,7 @@
 import { Request, Response } from 'express';
-import { PrismaClient, UserRole, BookingStatus } from '@prisma/client';
+import { UserRole, BookingStatus } from '@prisma/client';
 import { AuthRequest } from '../middleware/jwt';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma';
 
 /**
  * Get all bookings with filters (ADMIN only)
@@ -12,9 +11,9 @@ export const getAllBookings = async (req: AuthRequest, res: Response): Promise<v
     const userRole = req.userRole;
 
     if (userRole !== UserRole.ADMIN) {
-      res.status(403).json({ 
-        success: false, 
-        error: 'Admin access required' 
+      res.status(403).json({
+        success: false,
+        error: 'Admin access required'
       });
       return;
     }
@@ -81,9 +80,9 @@ export const getAllBookings = async (req: AuthRequest, res: Response): Promise<v
     });
   } catch (error) {
     console.error('Get all bookings error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Failed to fetch bookings' 
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch bookings'
     });
   }
 };
@@ -96,9 +95,9 @@ export const getBookingAnalytics = async (req: AuthRequest, res: Response): Prom
     const userRole = req.userRole;
 
     if (userRole !== UserRole.ADMIN) {
-      res.status(403).json({ 
-        success: false, 
-        error: 'Admin access required' 
+      res.status(403).json({
+        success: false,
+        error: 'Admin access required'
       });
       return;
     }
@@ -218,9 +217,9 @@ export const getBookingAnalytics = async (req: AuthRequest, res: Response): Prom
     });
   } catch (error) {
     console.error('Get booking analytics error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Failed to fetch booking analytics' 
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch booking analytics'
     });
   }
 };
@@ -233,9 +232,9 @@ export const getUserAnalytics = async (req: AuthRequest, res: Response): Promise
     const userRole = req.userRole;
 
     if (userRole !== UserRole.ADMIN) {
-      res.status(403).json({ 
-        success: false, 
-        error: 'Admin access required' 
+      res.status(403).json({
+        success: false,
+        error: 'Admin access required'
       });
       return;
     }
@@ -355,9 +354,9 @@ export const getUserAnalytics = async (req: AuthRequest, res: Response): Promise
     });
   } catch (error) {
     console.error('Get user analytics error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Failed to fetch user analytics' 
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch user analytics'
     });
   }
 };
@@ -370,9 +369,9 @@ export const getDriverAnalytics = async (req: AuthRequest, res: Response): Promi
     const userRole = req.userRole;
 
     if (userRole !== UserRole.ADMIN) {
-      res.status(403).json({ 
-        success: false, 
-        error: 'Admin access required' 
+      res.status(403).json({
+        success: false,
+        error: 'Admin access required'
       });
       return;
     }
@@ -387,9 +386,9 @@ export const getDriverAnalytics = async (req: AuthRequest, res: Response): Promi
 
     // Available drivers
     const availableDrivers = await prisma.driver.count({
-      where: { 
+      where: {
         isVerified: true,
-        availability: true 
+        availability: true
       }
     });
 
@@ -539,9 +538,9 @@ export const getDriverAnalytics = async (req: AuthRequest, res: Response): Promi
     });
   } catch (error) {
     console.error('Get driver analytics error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Failed to fetch driver analytics' 
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch driver analytics'
     });
   }
 };
@@ -555,9 +554,9 @@ export const getDriverBookingHistory = async (req: AuthRequest, res: Response): 
     const { driverId } = req.params;
 
     if (userRole !== UserRole.ADMIN) {
-      res.status(403).json({ 
-        success: false, 
-        error: 'Admin access required' 
+      res.status(403).json({
+        success: false,
+        error: 'Admin access required'
       });
       return;
     }
@@ -576,9 +575,9 @@ export const getDriverBookingHistory = async (req: AuthRequest, res: Response): 
     });
 
     if (!driver) {
-      res.status(404).json({ 
-        success: false, 
-        error: 'Driver not found' 
+      res.status(404).json({
+        success: false,
+        error: 'Driver not found'
       });
       return;
     }
@@ -619,9 +618,9 @@ export const getDriverBookingHistory = async (req: AuthRequest, res: Response): 
     });
   } catch (error) {
     console.error('Get driver booking history error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Failed to fetch driver booking history' 
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch driver booking history'
     });
   }
 };
@@ -635,9 +634,9 @@ export const getUserBookingHistory = async (req: AuthRequest, res: Response): Pr
     const { userId } = req.params;
 
     if (userRole !== UserRole.ADMIN) {
-      res.status(403).json({ 
-        success: false, 
-        error: 'Admin access required' 
+      res.status(403).json({
+        success: false,
+        error: 'Admin access required'
       });
       return;
     }
@@ -656,9 +655,9 @@ export const getUserBookingHistory = async (req: AuthRequest, res: Response): Pr
     });
 
     if (!user) {
-      res.status(404).json({ 
-        success: false, 
-        error: 'User not found' 
+      res.status(404).json({
+        success: false,
+        error: 'User not found'
       });
       return;
     }
@@ -701,9 +700,9 @@ export const getUserBookingHistory = async (req: AuthRequest, res: Response): Pr
     });
   } catch (error) {
     console.error('Get user booking history error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Failed to fetch user booking history' 
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch user booking history'
     });
   }
 };
@@ -716,9 +715,9 @@ export const getDashboardOverview = async (req: AuthRequest, res: Response): Pro
     const userRole = req.userRole;
 
     if (userRole !== UserRole.ADMIN) {
-      res.status(403).json({ 
-        success: false, 
-        error: 'Admin access required' 
+      res.status(403).json({
+        success: false,
+        error: 'Admin access required'
       });
       return;
     }
@@ -794,9 +793,9 @@ export const getDashboardOverview = async (req: AuthRequest, res: Response): Pro
     });
   } catch (error) {
     console.error('Get dashboard overview error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Failed to fetch dashboard overview' 
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch dashboard overview'
     });
   }
 };

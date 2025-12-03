@@ -5,8 +5,7 @@ exports.handleUserCreated = handleUserCreated;
 exports.handleUserUpdated = handleUserUpdated;
 exports.handleUserDeleted = handleUserDeleted;
 const svix_1 = require("svix");
-const client_1 = require("@prisma/client");
-const prisma = new client_1.PrismaClient();
+const prisma_1 = require("../lib/prisma");
 /**
  * Verify Clerk webhook signature
  */
@@ -43,7 +42,7 @@ async function handleUserCreated(data) {
         throw new Error('No primary email found');
     }
     try {
-        const user = await prisma.user.create({
+        const user = await prisma_1.prisma.user.create({
             data: {
                 clerkId: id,
                 email: primaryEmail.email_address,
@@ -71,7 +70,7 @@ async function handleUserUpdated(data) {
         throw new Error('No primary email found');
     }
     try {
-        const user = await prisma.user.update({
+        const user = await prisma_1.prisma.user.update({
             where: { clerkId: id },
             data: {
                 email: primaryEmail.email_address,
@@ -95,7 +94,7 @@ async function handleUserUpdated(data) {
 async function handleUserDeleted(data) {
     const { id } = data;
     try {
-        const user = await prisma.user.delete({
+        const user = await prisma_1.prisma.user.delete({
             where: { clerkId: id },
         });
         console.log('✅ User deleted:', user.id);

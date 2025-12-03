@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getDashboardOverview = exports.getUserBookingHistory = exports.getDriverBookingHistory = exports.getDriverAnalytics = exports.getUserAnalytics = exports.getBookingAnalytics = exports.getAllBookings = void 0;
 const client_1 = require("@prisma/client");
-const prisma = new client_1.PrismaClient();
+const prisma_1 = require("../lib/prisma");
 /**
  * Get all bookings with filters (ADMIN only)
  */
@@ -31,7 +31,7 @@ const getAllBookings = async (req, res) => {
         if (userId)
             whereClause.userId = userId;
         const [bookings, totalCount] = await Promise.all([
-            prisma.booking.findMany({
+            prisma_1.prisma.booking.findMany({
                 where: whereClause,
                 skip,
                 take: limit,
@@ -60,7 +60,7 @@ const getAllBookings = async (req, res) => {
                 },
                 orderBy: { createdAt: 'desc' }
             }),
-            prisma.booking.count({ where: whereClause })
+            prisma_1.prisma.booking.count({ where: whereClause })
         ]);
         const totalPages = Math.ceil(totalCount / limit);
         res.json({
@@ -98,19 +98,19 @@ const getBookingAnalytics = async (req, res) => {
             return;
         }
         // Get total bookings by status
-        const bookingsByStatus = await prisma.booking.groupBy({
+        const bookingsByStatus = await prisma_1.prisma.booking.groupBy({
             by: ['status'],
             _count: {
                 id: true
             }
         });
         // Get total bookings
-        const totalBookings = await prisma.booking.count();
+        const totalBookings = await prisma_1.prisma.booking.count();
         // Get bookings this month
         const startOfMonth = new Date();
         startOfMonth.setDate(1);
         startOfMonth.setHours(0, 0, 0, 0);
-        const bookingsThisMonth = await prisma.booking.count({
+        const bookingsThisMonth = await prisma_1.prisma.booking.count({
             where: {
                 createdAt: {
                     gte: startOfMonth
@@ -120,7 +120,7 @@ const getBookingAnalytics = async (req, res) => {
         // Get bookings today
         const startOfDay = new Date();
         startOfDay.setHours(0, 0, 0, 0);
-        const bookingsToday = await prisma.booking.count({
+        const bookingsToday = await prisma_1.prisma.booking.count({
             where: {
                 createdAt: {
                     gte: startOfDay
@@ -128,7 +128,7 @@ const getBookingAnalytics = async (req, res) => {
             }
         });
         // Get top drivers by bookings
-        const topDrivers = await prisma.booking.groupBy({
+        const topDrivers = await prisma_1.prisma.booking.groupBy({
             by: ['driverId'],
             _count: {
                 id: true
@@ -142,7 +142,7 @@ const getBookingAnalytics = async (req, res) => {
         });
         // Fetch driver details for top drivers
         const topDriversWithDetails = await Promise.all(topDrivers.map(async (item) => {
-            const driver = await prisma.driver.findUnique({
+            const driver = await prisma_1.prisma.driver.findUnique({
                 where: { id: item.driverId },
                 include: {
                     user: {
@@ -162,7 +162,7 @@ const getBookingAnalytics = async (req, res) => {
         // Get recent bookings (last 7 days grouped by day)
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-        const recentBookings = await prisma.booking.findMany({
+        const recentBookings = await prisma_1.prisma.booking.findMany({
             where: {
                 createdAt: {
                     gte: sevenDaysAgo
@@ -221,19 +221,19 @@ const getUserAnalytics = async (req, res) => {
             return;
         }
         // Total users by role
-        const usersByRole = await prisma.user.groupBy({
+        const usersByRole = await prisma_1.prisma.user.groupBy({
             by: ['role'],
             _count: {
                 id: true
             }
         });
         // Total users
-        const totalUsers = await prisma.user.count();
+        const totalUsers = await prisma_1.prisma.user.count();
         // Users registered this month
         const startOfMonth = new Date();
         startOfMonth.setDate(1);
         startOfMonth.setHours(0, 0, 0, 0);
-        const usersThisMonth = await prisma.user.count({
+        const usersThisMonth = await prisma_1.prisma.user.count({
             where: {
                 createdAt: {
                     gte: startOfMonth
@@ -243,7 +243,7 @@ const getUserAnalytics = async (req, res) => {
         // Users registered today
         const startOfDay = new Date();
         startOfDay.setHours(0, 0, 0, 0);
-        const usersToday = await prisma.user.count({
+        const usersToday = await prisma_1.prisma.user.count({
             where: {
                 createdAt: {
                     gte: startOfDay
@@ -251,7 +251,7 @@ const getUserAnalytics = async (req, res) => {
             }
         });
         // Most active users (by booking count)
-        const activeUsers = await prisma.booking.groupBy({
+        const activeUsers = await prisma_1.prisma.booking.groupBy({
             by: ['userId'],
             _count: {
                 id: true
@@ -265,7 +265,7 @@ const getUserAnalytics = async (req, res) => {
         });
         // Fetch user details for active users
         const activeUsersWithDetails = await Promise.all(activeUsers.map(async (item) => {
-            const user = await prisma.user.findUnique({
+            const user = await prisma_1.prisma.user.findUnique({
                 where: { id: item.userId },
                 select: {
                     id: true,
@@ -285,7 +285,7 @@ const getUserAnalytics = async (req, res) => {
         // User registration trend (last 7 days)
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-        const recentUsers = await prisma.user.findMany({
+        const recentUsers = await prisma_1.prisma.user.findMany({
             where: {
                 createdAt: {
                     gte: sevenDaysAgo
@@ -344,20 +344,20 @@ const getDriverAnalytics = async (req, res) => {
             return;
         }
         // Total drivers
-        const totalDrivers = await prisma.driver.count();
+        const totalDrivers = await prisma_1.prisma.driver.count();
         // Verified drivers
-        const verifiedDrivers = await prisma.driver.count({
+        const verifiedDrivers = await prisma_1.prisma.driver.count({
             where: { isVerified: true }
         });
         // Available drivers
-        const availableDrivers = await prisma.driver.count({
+        const availableDrivers = await prisma_1.prisma.driver.count({
             where: {
                 isVerified: true,
                 availability: true
             }
         });
         // Drivers by city
-        const driversByCity = await prisma.driver.groupBy({
+        const driversByCity = await prisma_1.prisma.driver.groupBy({
             by: ['city'],
             _count: {
                 id: true
@@ -370,7 +370,7 @@ const getDriverAnalytics = async (req, res) => {
             take: 10
         });
         // Drivers by vehicle type
-        const driversByVehicle = await prisma.driver.groupBy({
+        const driversByVehicle = await prisma_1.prisma.driver.groupBy({
             by: ['vehicleType'],
             _count: {
                 id: true
@@ -382,7 +382,7 @@ const getDriverAnalytics = async (req, res) => {
             }
         }).then(results => results.filter(item => item.vehicleType !== null));
         // Average salary expectation
-        const salaryStats = await prisma.driver.aggregate({
+        const salaryStats = await prisma_1.prisma.driver.aggregate({
             _avg: {
                 salaryExpectation: true
             },
@@ -399,7 +399,7 @@ const getDriverAnalytics = async (req, res) => {
             }
         });
         // Average experience
-        const experienceStats = await prisma.driver.aggregate({
+        const experienceStats = await prisma_1.prisma.driver.aggregate({
             _avg: {
                 experience: true
             },
@@ -410,7 +410,7 @@ const getDriverAnalytics = async (req, res) => {
             }
         });
         // Top performing drivers (by accepted bookings)
-        const topPerformers = await prisma.booking.groupBy({
+        const topPerformers = await prisma_1.prisma.booking.groupBy({
             by: ['driverId'],
             where: {
                 status: client_1.BookingStatus.ACCEPTED
@@ -427,7 +427,7 @@ const getDriverAnalytics = async (req, res) => {
         });
         // Fetch driver details for top performers
         const topPerformersWithDetails = await Promise.all(topPerformers.map(async (item) => {
-            const driver = await prisma.driver.findUnique({
+            const driver = await prisma_1.prisma.driver.findUnique({
                 where: { id: item.driverId },
                 include: {
                     user: {
@@ -447,7 +447,7 @@ const getDriverAnalytics = async (req, res) => {
         // Driver registration trend (last 30 days)
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        const recentDrivers = await prisma.driver.findMany({
+        const recentDrivers = await prisma_1.prisma.driver.findMany({
             where: {
                 createdAt: {
                     gte: thirtyDaysAgo
@@ -513,7 +513,7 @@ const getDriverBookingHistory = async (req, res) => {
             });
             return;
         }
-        const driver = await prisma.driver.findUnique({
+        const driver = await prisma_1.prisma.driver.findUnique({
             where: { id: driverId },
             include: {
                 user: {
@@ -532,7 +532,7 @@ const getDriverBookingHistory = async (req, res) => {
             });
             return;
         }
-        const bookings = await prisma.booking.findMany({
+        const bookings = await prisma_1.prisma.booking.findMany({
             where: { driverId },
             include: {
                 user: {
@@ -588,7 +588,7 @@ const getUserBookingHistory = async (req, res) => {
             });
             return;
         }
-        const user = await prisma.user.findUnique({
+        const user = await prisma_1.prisma.user.findUnique({
             where: { id: userId },
             select: {
                 id: true,
@@ -607,7 +607,7 @@ const getUserBookingHistory = async (req, res) => {
             });
             return;
         }
-        const bookings = await prisma.booking.findMany({
+        const bookings = await prisma_1.prisma.booking.findMany({
             where: { userId },
             include: {
                 driver: {
@@ -666,15 +666,15 @@ const getDashboardOverview = async (req, res) => {
         }
         // Get counts
         const [totalUsers, totalDrivers, verifiedDrivers, totalBookings, pendingBookings, acceptedBookings] = await Promise.all([
-            prisma.user.count({ where: { role: client_1.UserRole.USER } }),
-            prisma.driver.count(),
-            prisma.driver.count({ where: { isVerified: true } }),
-            prisma.booking.count(),
-            prisma.booking.count({ where: { status: client_1.BookingStatus.PENDING } }),
-            prisma.booking.count({ where: { status: client_1.BookingStatus.ACCEPTED } })
+            prisma_1.prisma.user.count({ where: { role: client_1.UserRole.USER } }),
+            prisma_1.prisma.driver.count(),
+            prisma_1.prisma.driver.count({ where: { isVerified: true } }),
+            prisma_1.prisma.booking.count(),
+            prisma_1.prisma.booking.count({ where: { status: client_1.BookingStatus.PENDING } }),
+            prisma_1.prisma.booking.count({ where: { status: client_1.BookingStatus.ACCEPTED } })
         ]);
         // Get recent activity
-        const recentBookings = await prisma.booking.findMany({
+        const recentBookings = await prisma_1.prisma.booking.findMany({
             take: 5,
             orderBy: { createdAt: 'desc' },
             include: {
@@ -693,7 +693,7 @@ const getDashboardOverview = async (req, res) => {
                 }
             }
         });
-        const recentUsers = await prisma.user.findMany({
+        const recentUsers = await prisma_1.prisma.user.findMany({
             take: 5,
             orderBy: { createdAt: 'desc' },
             select: {

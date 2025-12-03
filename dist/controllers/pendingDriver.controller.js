@@ -1,9 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.cleanupExpiredPendingDrivers = exports.checkPendingRegistration = exports.registerGuestDriver = void 0;
-const client_1 = require("@prisma/client");
 const upload_service_1 = require("../services/upload.service");
-const prisma = new client_1.PrismaClient();
+const prisma_1 = require("../lib/prisma");
 /**
  * Register as guest driver with file uploads (no auth required)
  * POST /api/drivers/register-guest
@@ -31,7 +30,7 @@ const registerGuestDriver = async (req, res) => {
             return;
         }
         // Check if pending registration already exists
-        const existingPending = await prisma.pendingDriver.findUnique({
+        const existingPending = await prisma_1.prisma.pendingDriver.findUnique({
             where: { email }
         });
         if (existingPending && !existingPending.isConverted) {
@@ -42,7 +41,7 @@ const registerGuestDriver = async (req, res) => {
             return;
         }
         // Check if user already exists with this email
-        const existingUser = await prisma.user.findUnique({
+        const existingUser = await prisma_1.prisma.user.findUnique({
             where: { email }
         });
         if (existingUser) {
@@ -70,7 +69,7 @@ const registerGuestDriver = async (req, res) => {
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + 30);
         // Create pending driver registration
-        const pendingDriver = await prisma.pendingDriver.create({
+        const pendingDriver = await prisma_1.prisma.pendingDriver.create({
             data: {
                 email,
                 phoneNumber,
@@ -138,12 +137,12 @@ const checkPendingRegistration = async (req, res) => {
         }
         let pendingDriver;
         if (email) {
-            pendingDriver = await prisma.pendingDriver.findUnique({
+            pendingDriver = await prisma_1.prisma.pendingDriver.findUnique({
                 where: { email: email }
             });
         }
         else if (phoneNumber) {
-            pendingDriver = await prisma.pendingDriver.findFirst({
+            pendingDriver = await prisma_1.prisma.pendingDriver.findFirst({
                 where: { phoneNumber: phoneNumber }
             });
         }
@@ -188,7 +187,7 @@ exports.checkPendingRegistration = checkPendingRegistration;
  */
 const cleanupExpiredPendingDrivers = async () => {
     try {
-        const result = await prisma.pendingDriver.deleteMany({
+        const result = await prisma_1.prisma.pendingDriver.deleteMany({
             where: {
                 expiresAt: { lt: new Date() },
                 isConverted: false

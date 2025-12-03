@@ -1,9 +1,8 @@
 import { Response } from 'express';
-import { PrismaClient, UserRole } from '@prisma/client';
+import { UserRole } from '@prisma/client';
 import { AuthRequest } from '../middleware/jwt';
 import { uploadImage } from '../services/upload.service';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma';
 
 /**
  * Create or update driver profile

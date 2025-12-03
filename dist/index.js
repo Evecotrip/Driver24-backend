@@ -39,7 +39,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = __importDefault(require("dotenv"));
-const client_1 = require("@prisma/client");
 const express_2 = require("@clerk/express");
 const user_routes_1 = __importDefault(require("./routes/user.routes"));
 const webhook_routes_1 = __importDefault(require("./routes/webhook.routes"));
@@ -48,10 +47,9 @@ const driver_routes_1 = __importDefault(require("./routes/driver.routes"));
 const booking_routes_1 = __importDefault(require("./routes/booking.routes"));
 const admin_routes_1 = __importDefault(require("./routes/admin.routes"));
 const upload_routes_1 = __importDefault(require("./routes/upload.routes"));
+const prisma_1 = require("./lib/prisma");
 // Load environment variables
 dotenv_1.default.config();
-// Initialize Prisma Client
-const prisma = new client_1.PrismaClient();
 // Initialize Express app
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 3000;
@@ -126,11 +124,11 @@ app.listen(PORT, () => {
 // Graceful shutdown
 process.on('SIGINT', async () => {
     console.log('\n🛑 Shutting down gracefully...');
-    await prisma.$disconnect();
+    await prisma_1.prisma.$disconnect();
     process.exit(0);
 });
 process.on('SIGTERM', async () => {
     console.log('\n🛑 Shutting down gracefully...');
-    await prisma.$disconnect();
+    await prisma_1.prisma.$disconnect();
     process.exit(0);
 });
