@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.updateAvailability = exports.bulkVerifyDrivers = exports.getVerifiedDrivers = exports.getPendingDrivers = exports.verifyDriver = exports.getAllDrivers = exports.getDriversByCity = exports.getMyDriverProfile = exports.createOrUpdateDriverProfile = void 0;
 const client_1 = require("@prisma/client");
+const upload_service_1 = require("../services/upload.service");
 const prisma = new client_1.PrismaClient();
 /**
  * Create or update driver profile
@@ -11,6 +12,7 @@ const createOrUpdateDriverProfile = async (req, res) => {
     try {
         const userId = req.userId;
         const userRole = req.userRole;
+        const files = req.files;
         if (!userId || userRole !== client_1.UserRole.DRIVER) {
             res.status(403).json({
                 success: false,
@@ -18,12 +20,12 @@ const createOrUpdateDriverProfile = async (req, res) => {
             });
             return;
         }
-        const { name, phoneNumber, rcNumber, rcImage, dlNumber, dlImage, permanentAddress, operatingAddress, city, state, pincode, vehicleType, vehicleModel, vehicleNumber, experience, salaryExpectation, availability } = req.body;
+        const { name, phoneNumber, dlNumber, dlImage, panNumber, panImage, aadharNumber, aadharImage, permanentAddress, operatingAddress, city, state, pincode, vehicleType, vehicleModel, vehicleNumber, experience, salaryExpectation, availability } = req.body;
         // Validate required fields
-        if (!name || !phoneNumber || !rcNumber || !dlNumber || !permanentAddress || !operatingAddress || !city) {
+        if (!name || !phoneNumber || !dlNumber || !permanentAddress || !operatingAddress || !city) {
             res.status(400).json({
                 success: false,
-                error: 'Missing required fields: name, phoneNumber, rcNumber, dlNumber, permanentAddress, operatingAddress, city'
+                error: 'Missing required fields: name, phoneNumber, dlNumber, permanentAddress, operatingAddress, city'
             });
             return;
         }
@@ -31,6 +33,20 @@ const createOrUpdateDriverProfile = async (req, res) => {
         const existingDriver = await prisma.driver.findUnique({
             where: { userId }
         });
+        // Upload new images if provided
+        let dlImageUrl, panImageUrl, aadharImageUrl;
+        if (files?.dlImage?.[0]) {
+            const dlResult = await (0, upload_service_1.uploadImage)(files.dlImage[0].buffer, 'dl-images', `${Date.now()}-dl-${userId}`);
+            dlImageUrl = dlResult.url;
+        }
+        if (files?.panImage?.[0]) {
+            const panResult = await (0, upload_service_1.uploadImage)(files.panImage[0].buffer, 'pan-images', `${Date.now()}-pan-${userId}`);
+            panImageUrl = panResult.url;
+        }
+        if (files?.aadharImage?.[0]) {
+            const aadharResult = await (0, upload_service_1.uploadImage)(files.aadharImage[0].buffer, 'aadhar-images', `${Date.now()}-aadhar-${userId}`);
+            aadharImageUrl = aadharResult.url;
+        }
         let driver;
         if (existingDriver) {
             // Update existing profile
@@ -39,10 +55,12 @@ const createOrUpdateDriverProfile = async (req, res) => {
                 data: {
                     name,
                     phoneNumber,
-                    rcNumber,
-                    rcImage,
                     dlNumber,
-                    dlImage,
+                    dlImage: dlImageUrl || dlImage,
+                    panNumber,
+                    panImage: panImageUrl || panImage,
+                    aadharNumber,
+                    aadharImage: aadharImageUrl || aadharImage,
                     permanentAddress,
                     operatingAddress,
                     city,
@@ -64,10 +82,12 @@ const createOrUpdateDriverProfile = async (req, res) => {
                     userId,
                     name,
                     phoneNumber,
-                    rcNumber,
-                    rcImage,
                     dlNumber,
-                    dlImage,
+                    dlImage: dlImageUrl || dlImage,
+                    panNumber,
+                    panImage: panImageUrl || panImage,
+                    aadharNumber,
+                    aadharImage: aadharImageUrl || aadharImage,
                     permanentAddress,
                     operatingAddress,
                     city,

@@ -5,10 +5,11 @@ import { PrismaClient } from '@prisma/client';
 import { clerkMiddleware } from '@clerk/express';
 import userRoutes from './routes/user.routes';
 import webhookRoutes from './routes/webhook.routes';
-import authRoutes from './routes/auth.routes';
+import authRoutes, { protectedAuthRouter } from './routes/auth.routes';
 import driverRoutes from './routes/driver.routes';
 import bookingRoutes from './routes/booking.routes';
 import adminRoutes from './routes/admin.routes';
+import uploadRoutes from './routes/upload.routes';
 
 // Load environment variables
 dotenv.config();
@@ -33,7 +34,7 @@ app.use((req, res, next) => {
 
 // Welcome route
 app.get('/', (req, res) => {
-  res.json({ 
+  res.json({
     message: 'Driver Save API',
     version: '1.0.0',
     status: 'running',
@@ -44,6 +45,7 @@ app.get('/', (req, res) => {
       bookings: '/api/bookings',
       admin: '/api/admin',
       users: '/api/users',
+      upload: '/api/upload',
       webhooks: '/api/webhooks'
     }
   });
@@ -54,20 +56,32 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', message: 'Server is running' });
 });
 
-// Public routes (no auth required - must come BEFORE Clerk middleware)
+// ============================================
+// PUBLIC ROUTES (BEFORE Clerk middleware)
+// ============================================
 app.use('/api/webhooks', webhookRoutes); // Clerk webhooks
-console.log('📍 Registering /api/auth routes...');
-app.use('/api/auth', authRoutes); // Auth routes (includes public select-role endpoint)
-console.log('✅ /api/auth routes registered');
+console.log('📍 Registering public /api/auth routes...');
+app.use('/api/auth', authRoutes); // Public auth routes (select-role, profile by clerkId)
+console.log('✅ Public /api/auth routes registered');
 
-// Clerk authentication middleware (applies to routes below)
+// ============================================
+// CLERK MIDDLEWARE
+// ============================================
 app.use(clerkMiddleware());
+console.log('🔒 Clerk middleware registered');
 
-// Protected API routes (require JWT authentication)
+// ============================================
+// PROTECTED ROUTES (AFTER Clerk middleware)
+// ============================================
+console.log('📍 Registering protected /api/auth routes...');
+app.use('/api/auth', protectedAuthRouter); // Protected auth routes (refresh-token, complete-driver-registration)
+console.log('✅ Protected /api/auth routes registered');
+
 app.use('/api/drivers', driverRoutes); // Driver routes (require JWT)
 app.use('/api/bookings', bookingRoutes); // Booking routes (require JWT)
 app.use('/api/admin', adminRoutes); // Admin routes (require JWT + ADMIN role)
 app.use('/api/users', userRoutes); // User routes (Clerk auth)
+app.use('/api/upload', uploadRoutes); // Upload routes (require JWT)
 
 // 404 handler
 app.use((req, res) => {

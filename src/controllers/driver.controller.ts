@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { PrismaClient, UserRole } from '@prisma/client';
 import { AuthRequest } from '../middleware/jwt';
+import { uploadImage } from '../services/upload.service';
 
 const prisma = new PrismaClient();
 
@@ -12,11 +13,12 @@ export const createOrUpdateDriverProfile = async (req: AuthRequest, res: Respons
   try {
     const userId = req.userId;
     const userRole = req.userRole;
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
 
     if (!userId || userRole !== UserRole.DRIVER) {
-      res.status(403).json({ 
-        success: false, 
-        error: 'Only users with DRIVER role can create driver profiles' 
+      res.status(403).json({
+        success: false,
+        error: 'Only users with DRIVER role can create driver profiles'
       });
       return;
     }
@@ -24,10 +26,12 @@ export const createOrUpdateDriverProfile = async (req: AuthRequest, res: Respons
     const {
       name,
       phoneNumber,
-      rcNumber,
-      rcImage,
       dlNumber,
       dlImage,
+      panNumber,
+      panImage,
+      aadharNumber,
+      aadharImage,
       permanentAddress,
       operatingAddress,
       city,
@@ -42,10 +46,10 @@ export const createOrUpdateDriverProfile = async (req: AuthRequest, res: Respons
     } = req.body;
 
     // Validate required fields
-    if (!name || !phoneNumber || !rcNumber || !dlNumber || !permanentAddress || !operatingAddress || !city) {
-      res.status(400).json({ 
-        success: false, 
-        error: 'Missing required fields: name, phoneNumber, rcNumber, dlNumber, permanentAddress, operatingAddress, city' 
+    if (!name || !phoneNumber || !dlNumber || !permanentAddress || !operatingAddress || !city) {
+      res.status(400).json({
+        success: false,
+        error: 'Missing required fields: name, phoneNumber, dlNumber, permanentAddress, operatingAddress, city'
       });
       return;
     }
@@ -55,6 +59,36 @@ export const createOrUpdateDriverProfile = async (req: AuthRequest, res: Respons
       where: { userId }
     });
 
+    // Upload new images if provided
+    let dlImageUrl, panImageUrl, aadharImageUrl;
+
+    if (files?.dlImage?.[0]) {
+      const dlResult = await uploadImage(
+        files.dlImage[0].buffer,
+        'dl-images',
+        `${Date.now()}-dl-${userId}`
+      );
+      dlImageUrl = dlResult.url;
+    }
+
+    if (files?.panImage?.[0]) {
+      const panResult = await uploadImage(
+        files.panImage[0].buffer,
+        'pan-images',
+        `${Date.now()}-pan-${userId}`
+      );
+      panImageUrl = panResult.url;
+    }
+
+    if (files?.aadharImage?.[0]) {
+      const aadharResult = await uploadImage(
+        files.aadharImage[0].buffer,
+        'aadhar-images',
+        `${Date.now()}-aadhar-${userId}`
+      );
+      aadharImageUrl = aadharResult.url;
+    }
+
     let driver;
     if (existingDriver) {
       // Update existing profile
@@ -63,10 +97,12 @@ export const createOrUpdateDriverProfile = async (req: AuthRequest, res: Respons
         data: {
           name,
           phoneNumber,
-          rcNumber,
-          rcImage,
           dlNumber,
-          dlImage,
+          dlImage: dlImageUrl || dlImage,
+          panNumber,
+          panImage: panImageUrl || panImage,
+          aadharNumber,
+          aadharImage: aadharImageUrl || aadharImage,
           permanentAddress,
           operatingAddress,
           city,
@@ -87,10 +123,12 @@ export const createOrUpdateDriverProfile = async (req: AuthRequest, res: Respons
           userId,
           name,
           phoneNumber,
-          rcNumber,
-          rcImage,
           dlNumber,
-          dlImage,
+          dlImage: dlImageUrl || dlImage,
+          panNumber,
+          panImage: panImageUrl || panImage,
+          aadharNumber,
+          aadharImage: aadharImageUrl || aadharImage,
           permanentAddress,
           operatingAddress,
           city,
@@ -106,23 +144,23 @@ export const createOrUpdateDriverProfile = async (req: AuthRequest, res: Respons
       });
     }
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       data: driver,
       message: existingDriver ? 'Driver profile updated successfully' : 'Driver profile created successfully'
     });
   } catch (error: any) {
     console.error('Error creating/updating driver profile:', error);
-    
+
     // Handle unique constraint violations
     if (error.code === 'P2002') {
-      res.status(400).json({ 
-        success: false, 
-        error: `${error.meta?.target?.[0] || 'Field'} already exists` 
+      res.status(400).json({
+        success: false,
+        error: `${error.meta?.target?.[0] || 'Field'} already exists`
       });
       return;
     }
-    
+
     res.status(500).json({ success: false, error: 'Failed to create/update driver profile' });
   }
 };
@@ -175,9 +213,9 @@ export const getDriversByCity = async (req: AuthRequest, res: Response): Promise
 
     // Only USER and ADMIN can view drivers
     if (userRole !== UserRole.USER && userRole !== UserRole.ADMIN) {
-      res.status(403).json({ 
-        success: false, 
-        error: 'Only users with USER or ADMIN role can view drivers' 
+      res.status(403).json({
+        success: false,
+        error: 'Only users with USER or ADMIN role can view drivers'
       });
       return;
     }
@@ -248,9 +286,9 @@ export const getDriversByCity = async (req: AuthRequest, res: Response): Promise
       take: limit
     });
 
-    res.json({ 
-      success: true, 
-      data: drivers, 
+    res.json({
+      success: true,
+      data: drivers,
       count: drivers.length,
       pagination: {
         page,
@@ -275,9 +313,9 @@ export const getAllDrivers = async (req: AuthRequest, res: Response): Promise<vo
     const userRole = req.userRole;
 
     if (userRole !== UserRole.ADMIN) {
-      res.status(403).json({ 
-        success: false, 
-        error: 'Only admins can view all drivers' 
+      res.status(403).json({
+        success: false,
+        error: 'Only admins can view all drivers'
       });
       return;
     }
@@ -321,9 +359,9 @@ export const verifyDriver = async (req: AuthRequest, res: Response): Promise<voi
     const adminId = req.userId;
 
     if (userRole !== UserRole.ADMIN) {
-      res.status(403).json({ 
-        success: false, 
-        error: 'Only admins can verify drivers' 
+      res.status(403).json({
+        success: false,
+        error: 'Only admins can verify drivers'
       });
       return;
     }
@@ -337,8 +375,8 @@ export const verifyDriver = async (req: AuthRequest, res: Response): Promise<voi
       }
     });
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       data: driver,
       message: 'Driver verified successfully'
     });
@@ -356,9 +394,9 @@ export const getPendingDrivers = async (req: AuthRequest, res: Response): Promis
     const userRole = req.userRole;
 
     if (userRole !== UserRole.ADMIN) {
-      res.status(403).json({ 
-        success: false, 
-        error: 'Only admins can view pending drivers' 
+      res.status(403).json({
+        success: false,
+        error: 'Only admins can view pending drivers'
       });
       return;
     }
@@ -397,9 +435,9 @@ export const getVerifiedDrivers = async (req: AuthRequest, res: Response): Promi
     const userRole = req.userRole;
 
     if (userRole !== UserRole.ADMIN) {
-      res.status(403).json({ 
-        success: false, 
-        error: 'Only admins can view verified drivers' 
+      res.status(403).json({
+        success: false,
+        error: 'Only admins can view verified drivers'
       });
       return;
     }
@@ -440,17 +478,17 @@ export const bulkVerifyDrivers = async (req: AuthRequest, res: Response): Promis
     const { driverIds } = req.body;
 
     if (userRole !== UserRole.ADMIN) {
-      res.status(403).json({ 
-        success: false, 
-        error: 'Only admins can verify drivers' 
+      res.status(403).json({
+        success: false,
+        error: 'Only admins can verify drivers'
       });
       return;
     }
 
     if (!Array.isArray(driverIds) || driverIds.length === 0) {
-      res.status(400).json({ 
-        success: false, 
-        error: 'driverIds must be a non-empty array' 
+      res.status(400).json({
+        success: false,
+        error: 'driverIds must be a non-empty array'
       });
       return;
     }
@@ -468,8 +506,8 @@ export const bulkVerifyDrivers = async (req: AuthRequest, res: Response): Promis
       }
     });
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       data: { count: result.count },
       message: `${result.count} driver(s) verified successfully`
     });
@@ -489,17 +527,17 @@ export const updateAvailability = async (req: AuthRequest, res: Response): Promi
     const { availability } = req.body;
 
     if (userRole !== UserRole.DRIVER) {
-      res.status(403).json({ 
-        success: false, 
-        error: 'Only drivers can update their availability' 
+      res.status(403).json({
+        success: false,
+        error: 'Only drivers can update their availability'
       });
       return;
     }
 
     if (typeof availability !== 'boolean') {
-      res.status(400).json({ 
-        success: false, 
-        error: 'Availability must be a boolean value' 
+      res.status(400).json({
+        success: false,
+        error: 'Availability must be a boolean value'
       });
       return;
     }
@@ -509,8 +547,8 @@ export const updateAvailability = async (req: AuthRequest, res: Response): Promi
       data: { availability }
     });
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       data: driver,
       message: `Availability updated to ${availability ? 'available' : 'unavailable'}`
     });

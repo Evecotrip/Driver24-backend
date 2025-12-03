@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.refreshToken = exports.getProfile = exports.getProfileByClerkId = exports.selectRole = void 0;
+exports.completeDriverRegistration = exports.refreshToken = exports.getProfile = exports.getProfileByClerkId = exports.selectRole = void 0;
 const client_1 = require("@prisma/client");
 const jwt_service_1 = require("../services/jwt.service");
 const prisma = new client_1.PrismaClient();
@@ -198,3 +198,142 @@ const refreshToken = async (req, res) => {
     }
 };
 exports.refreshToken = refreshToken;
+/**
+ * Complete driver registration after Clerk authentication
+ * Links pending driver data to authenticated user
+ */
+const completeDriverRegistration = async (req, res) => {
+    try {
+        const userId = req.userId; // Clerk user ID
+        const { email } = req.body;
+        if (!userId) {
+            res.status(401).json({ success: false, error: 'Unauthorized' });
+            return;
+        }
+        if (!email) {
+            res.status(400).json({ success: false, error: 'Email is required' });
+            return;
+        }
+        // Get user from database
+        const user = await prisma.user.findUnique({
+            where: { clerkId: userId }
+        });
+        if (!user) {
+            res.status(404).json({ success: false, error: 'User not found' });
+            return;
+        }
+        // Check if user already has a role
+        if (user.role) {
+            res.status(400).json({
+                success: false,
+                error: 'User already has a role assigned'
+            });
+            return;
+        }
+        // Find pending driver registration
+        const pendingDriver = await prisma.pendingDriver.findUnique({
+            where: { email }
+        });
+        if (!pendingDriver) {
+            res.status(404).json({
+                success: false,
+                error: 'No pending registration found with this email'
+            });
+            return;
+        }
+        if (pendingDriver.isConverted) {
+            res.status(400).json({
+                success: false,
+                error: 'This registration has already been completed'
+            });
+            return;
+        }
+        // Check if expired
+        if (new Date() > pendingDriver.expiresAt) {
+            res.status(410).json({
+                success: false,
+                error: 'Pending registration has expired. Please register again.'
+            });
+            return;
+        }
+        // Update user with DRIVER role and city
+        const updatedUser = await prisma.user.update({
+            where: { clerkId: userId },
+            data: {
+                role: client_1.UserRole.DRIVER,
+                city: pendingDriver.city
+            }
+        });
+        // Create driver profile from pending data
+        const driver = await prisma.driver.create({
+            data: {
+                userId: updatedUser.id,
+                name: pendingDriver.name,
+                phoneNumber: pendingDriver.phoneNumber,
+                dlNumber: pendingDriver.dlNumber,
+                dlImage: pendingDriver.dlImage,
+                panNumber: pendingDriver.panNumber,
+                panImage: pendingDriver.panImage,
+                aadharNumber: pendingDriver.aadharNumber,
+                aadharImage: pendingDriver.aadharImage,
+                permanentAddress: pendingDriver.permanentAddress,
+                operatingAddress: pendingDriver.operatingAddress,
+                city: pendingDriver.city,
+                state: pendingDriver.state,
+                pincode: pendingDriver.pincode,
+                vehicleType: pendingDriver.vehicleType,
+                vehicleModel: pendingDriver.vehicleModel,
+                vehicleNumber: pendingDriver.vehicleNumber,
+                experience: pendingDriver.experience,
+                salaryExpectation: pendingDriver.salaryExpectation,
+                availability: true
+            }
+        });
+        // Mark pending driver as converted
+        await prisma.pendingDriver.update({
+            where: { id: pendingDriver.id },
+            data: {
+                isConverted: true,
+                convertedAt: new Date(),
+                convertedToUserId: updatedUser.id
+            }
+        });
+        // Generate custom JWT token
+        const token = (0, jwt_service_1.generateToken)({
+            userId: updatedUser.id,
+            email: updatedUser.email,
+            role: updatedUser.role,
+            city: updatedUser.city || undefined
+        });
+        res.json({
+            success: true,
+            data: {
+                user: {
+                    id: updatedUser.id,
+                    email: updatedUser.email,
+                    role: updatedUser.role,
+                    city: updatedUser.city
+                },
+                driver,
+                token
+            },
+            message: 'Driver registration completed successfully!'
+        });
+    }
+    catch (error) {
+        console.error('Error completing driver registration:', error);
+        // Handle unique constraint violations
+        if (error.code === 'P2002') {
+            res.status(400).json({
+                success: false,
+                error: `${error.meta?.target?.[0] || 'Field'} already exists`
+            });
+            return;
+        }
+        res.status(500).json({
+            success: false,
+            error: 'Failed to complete driver registration'
+        });
+    }
+};
+exports.completeDriverRegistration = completeDriverRegistration;

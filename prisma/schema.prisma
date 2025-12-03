@@ -26,103 +26,159 @@ enum BookingStatus {
 
 // User model synced with Clerk
 model User {
-  id                String    @id @default(uuid()) // Internal UUID
-  clerkId           String    @unique // Clerk user ID
-  email             String    @unique
-  firstName         String?
-  lastName          String?
-  username          String?   @unique
-  profileImageUrl   String?
-  role              UserRole? // Role selected by user
-  city              String?   // User's city for filtering drivers
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  
-  // Relations
-  driverProfile     Driver?
-  bookingsAsUser    Booking[]  @relation("UserBookings")
+  id              String    @id @default(uuid()) // Internal UUID
+  clerkId         String    @unique // Clerk user ID
+  email           String    @unique
+  firstName       String?
+  lastName        String?
+  username        String?   @unique
+  profileImageUrl String?
+  role            UserRole? // Role selected by user
+  city            String? // User's city for filtering drivers
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
-  @@map("users")
+  // Relations
+  driverProfile  Driver?
+  bookingsAsUser Booking[] @relation("UserBookings")
+
   @@index([clerkId])
+  @@map("users")
 }
 
 // Driver profile with detailed information
 model Driver {
-  id                String   @id @default(uuid())
-  userId            String   @unique
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   // Personal Information
-  name              String
-  phoneNumber       String
-  
-  // Vehicle Registration
-  rcNumber          String   @unique
-  rcImage           String?  // URL to RC image
-  
+  name        String
+  phoneNumber String
+
   // Driving License
-  dlNumber          String   @unique
-  dlImage           String?  // URL to DL image
-  
+  dlNumber String  @unique
+  dlImage  String? // URL to DL image
+
+  // PAN Card
+  panNumber String? @unique
+  panImage  String? // URL to PAN image
+
+  // Aadhar Card
+  aadharNumber String? @unique
+  aadharImage  String? // URL to Aadhar image
+
   // Address Information
-  permanentAddress  String
-  operatingAddress  String
-  city              String   // Operating city
-  state             String?
-  pincode           String?
-  
+  permanentAddress String
+  operatingAddress String
+  city             String // Operating city
+  state            String?
+  pincode          String?
+
   // Additional Information
-  vehicleType       String?  // e.g., Car, Bike, Auto
+  vehicleType       String? // e.g., Car, Bike, Auto
   vehicleModel      String?
-  vehicleNumber     String?  @unique
-  experience        Int?     // Years of experience
-  salaryExpectation Int?     // Expected salary per month in INR
-  availability      Boolean  @default(true)
-  
+  vehicleNumber     String? @unique
+  experience        Int? // Years of experience
+  salaryExpectation Int? // Expected salary per month in INR
+  availability      Boolean @default(true)
+
   // Verification Status
-  isVerified        Boolean  @default(false)
-  verifiedAt        DateTime?
-  verifiedBy        String?  // Admin ID who verified
-  
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  isVerified Boolean   @default(false)
+  verifiedAt DateTime?
+  verifiedBy String? // Admin ID who verified
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  bookings          Booking[]  @relation("DriverBookings")
+  bookings Booking[] @relation("DriverBookings")
 
-  @@map("drivers")
   @@index([city])
   @@index([userId])
+  @@map("drivers")
 }
 
 // Booking/Request model
 model Booking {
-  id                String        @id @default(uuid())
-  
-  // User who made the booking
-  userId            String
-  user              User          @relation("UserBookings", fields: [userId], references: [id], onDelete: Cascade)
-  
-  // Driver who received the booking
-  driverId          String
-  driver            Driver        @relation("DriverBookings", fields: [driverId], references: [id], onDelete: Cascade)
-  
-  // Booking details
-  status            BookingStatus @default(PENDING)
-  pickupLocation    String?       // Optional: where to pick up
-  dropLocation      String?       // Optional: destination
-  scheduledDate     DateTime?     // Optional: when they need the driver
-  notes             String?       // Additional notes from user
-  
-  // Response from driver
-  driverResponse    String?       // Optional message from driver
-  respondedAt       DateTime?     // When driver responded
-  
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
+  id String @id @default(uuid())
 
-  @@map("bookings")
+  // User who made the booking
+  userId String
+  user   User   @relation("UserBookings", fields: [userId], references: [id], onDelete: Cascade)
+
+  // Driver who received the booking
+  driverId String
+  driver   Driver @relation("DriverBookings", fields: [driverId], references: [id], onDelete: Cascade)
+
+  // Booking details
+  status         BookingStatus @default(PENDING)
+  pickupLocation String? // Optional: where to pick up
+  dropLocation   String? // Optional: destination
+  scheduledDate  DateTime? // Optional: when they need the driver
+  notes          String? // Additional notes from user
+
+  // Response from driver
+  driverResponse String? // Optional message from driver
+  respondedAt    DateTime? // When driver responded
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([userId])
   @@index([driverId])
   @@index([status])
+  @@map("bookings")
+}
+
+// Pending driver registration (before authentication)
+model PendingDriver {
+  id String @id @default(uuid())
+
+  // Matching identifiers
+  email       String @unique
+  phoneNumber String
+
+  // Personal Information
+  name String
+
+  // Driving License
+  dlNumber String
+  dlImage  String? // URL to DL image
+
+  // PAN Card
+  panNumber String
+  panImage  String? // URL to PAN image
+
+  // Aadhar Card
+  aadharNumber String
+  aadharImage  String? // URL to Aadhar image
+
+  // Address Information
+  permanentAddress String
+  operatingAddress String
+  city             String
+  state            String?
+  pincode          String?
+
+  // Additional Information
+  vehicleType       String?
+  vehicleModel      String?
+  vehicleNumber     String?
+  experience        Int?
+  salaryExpectation Int?
+
+  // Tracking
+  isConverted       Boolean   @default(false)
+  convertedAt       DateTime?
+  convertedToUserId String?
+
+  createdAt DateTime @default(now())
+  expiresAt DateTime // Auto-delete after 30 days
+
+  @@index([email])
+  @@index([phoneNumber])
+  @@index([isConverted])
+  @@index([expiresAt])
+  @@map("pending_drivers")
 }
