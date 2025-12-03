@@ -222,11 +222,11 @@ const completeDriverRegistration = async (req, res) => {
             res.status(404).json({ success: false, error: 'User not found' });
             return;
         }
-        // Check if user already has a role
-        if (user.role) {
+        // Check if user already has a role other than DRIVER
+        if (user.role && user.role !== client_1.UserRole.DRIVER) {
             res.status(400).json({
                 success: false,
-                error: 'User already has a role assigned'
+                error: `User already has ${user.role} role assigned. Cannot complete driver registration.`
             });
             return;
         }
