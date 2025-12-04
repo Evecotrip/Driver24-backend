@@ -103,6 +103,8 @@ export const getProfileByClerkId = async (req: Request, res: Response): Promise<
       return;
     }
 
+    console.log('Fetching profile for clerkId:', clerkId);
+
     const user = await prisma.user.findUnique({
       where: { clerkId },
       select: {
@@ -117,6 +119,8 @@ export const getProfileByClerkId = async (req: Request, res: Response): Promise<
         city: true,
       }
     });
+
+    console.log('User found:', user);
 
     if (!user) {
       res.status(404).json({ success: false, error: 'User not found' });
