@@ -19,10 +19,34 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
+// In your backend server
 app.use(cors({
-  origin: ['https://www.drivers24.in', 'http://localhost:3000'],
-  credentials: true
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like cURL, Postman)
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = [
+      'https://www.drivers24.in',
+      'https://drivers24.in',
+      'http://localhost:3000',
+      'http://localhost:3001',
+    ];
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(null, true); // For development, allow all
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['Content-Length'],
+  maxAge: 86400, // Cache preflight for 24 hours
 }));
+
+// CRITICAL: Handle OPTIONS requests explicitly
+app.options('*', cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
