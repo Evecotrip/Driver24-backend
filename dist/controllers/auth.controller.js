@@ -93,6 +93,7 @@ const getProfileByClerkId = async (req, res) => {
             res.status(400).json({ success: false, error: 'clerkId is required' });
             return;
         }
+        console.log('Fetching profile for clerkId:', clerkId);
         const user = await prisma_1.prisma.user.findUnique({
             where: { clerkId },
             select: {
@@ -107,6 +108,7 @@ const getProfileByClerkId = async (req, res) => {
                 city: true,
             }
         });
+        console.log('User found:', user);
         if (!user) {
             res.status(404).json({ success: false, error: 'User not found' });
             return;
